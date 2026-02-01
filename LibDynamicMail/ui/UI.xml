@@ -1,0 +1,43 @@
+<GuiXml>
+	<Controls>
+        <Control name="LDM_GamepadTextFieldSubmitItem" inherits="ZO_GamepadMenuEntryDimensionsTemplate ZO_GamepadMenuEntryLabelSizedTemplate" virtual="true">
+            <Controls>
+                <Label name="$(parent)Label" font="ZoFontGamepad18" verticalAlignment="CENTER" wrapMode="ELLIPSIS" modifyTextType="UPPERCASE">
+					<Anchor point="TOPLEFT"/>
+					<Dimensions x="ZO_GAMEPAD_DEFAULT_LIST_ENTRY_WIDTH_AFTER_INDENT"/>
+                </Label>
+            </Controls>
+        </Control>
+
+		<Control name="LDM_List_Template" virtual="true">
+			<AnchorFill/>
+			<Controls>
+				<Control name="$(parent)SideContent" inherits="ZO_GamepadGrid_NavQuadrant_4_Anchors">
+					<Controls>
+						<Control name="$(parent)Tooltip" inherits="ZO_ScrollTooltip_Gamepad ZO_GamepadGrid_NavQuadrant_ContainerAnchors"/>
+					</Controls>
+				</Control>
+				<Control name="$(parent)Main">
+					<Controls>
+						<Control name="$(parent)List" inherits="ZO_VerticalParametricScrollListTemplate">
+							<AnchorFill/>
+							<Controls>
+								<Label name="$(parent)NoItemsLabel" override="true" font="ZoFontGamepadCondensed36" horizontalAlignment="CENTER" verticalAlignment="CENTER" color="INTERFACE_COLOR_TYPE_TEXT_COLORS:INTERFACE_TEXT_COLOR_NORMAL">
+									<Anchor point="CENTER"/>
+									<Dimensions x="ZO_GAMEPAD_CONTENT_WIDTH"/>
+								</Label>
+							</Controls>
+						</Control>
+					</Controls>
+				</Control>
+			</Controls>
+		</Control>
+		
+		<TopLevelControl name="LDM_TeleportList_Gamepad" inherits="LDM_List_Template" hidden="true"/>
+		
+		<TopLevelControl name="LDM_Category_Gamepad" inherits="LDM_List_Template" hidden="true">
+			<AnchorFill/>
+			<OnInitialized> LDM_Initialize(self) </OnInitialized>
+		</TopLevelControl>
+	</Controls>
+</GuiXml>
