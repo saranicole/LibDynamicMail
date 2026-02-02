@@ -7,4 +7,16 @@
 ## OptionalDependsOn: LibTextFormat
 ## IsLibrary: true
 
+core/TemplateManager.lua
+
+lang/en.lua
+lang/$(language).lua
+
+mail/Helpers.lua
+mail/Inbox.lua
+mail/Send.lua
+
+ui/UI.lua
+ui/UI.xml
+
 LibDynamicMail.lua

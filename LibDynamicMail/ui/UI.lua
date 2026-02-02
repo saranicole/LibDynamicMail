@@ -10,7 +10,117 @@ if IsConsoleUI() or IsInGamepadPreferredMode() then
  MailView = MAIL_GAMEPAD
 end
 
-function UI:Initialize(control)
+local UI_Shared = ZO_Object.MultiSubclass(ZO_GamepadVerticalParametricScrollList, ZO_SocialOptionsDialogGamepad)
+LDM.UI.shared = UI_Shared
+local UI_TemplateList = UI_Shared:Subclass()
+UI.templateList = UI_TemplateList
+
+function UI_Shared:New(...)
+	return ZO_GamepadVerticalParametricScrollList.New(self, ...)
+end
+
+function UI_Shared:OnSelectedDataChangedCallback(categoryData, oldData)
+	CALLBACK_MANAGER:FireCallbacks('LDM_GAMEPAD_CATEGORY_CHANGED', categoryData)
+-- 	self:UpdateTooltip(categoryData)
+end
+
+function UI_Shared:BuildDropdownEntry(header, label, setupFunction, callback, finishedCallback, icon)
+	local entry = {
+		header = header or self.currentGroupingHeader,
+		template = "ZO_GamepadDropdownItem",
+
+		templateData =
+		{
+			text = GetStringFromData(label),
+			setup = setupFunction,
+			callback = callback,
+			finishedCallback = finishedCallback,
+			narrationText = ZO_GetDefaultParametricListDropdownNarrationText,
+		},
+		icon = icon,
+	}
+
+	return entry
+end
+
+function UI_Shared:BuildDropdown(header, label, dropdownData, icon)
+
+	local function onSelectedCallback(dropdown, entryText, entry)
+		dropdownData.selectedIndex = entry.index
+
+		if dropdownData.callback then
+			dropdownData.callback(entry)
+		end
+	end
+
+	local function callback(dialog)
+		local targetData = dialog.entryList:GetTargetData()
+		local targetControl = dialog.entryList:GetTargetControl()
+		targetControl.dropdown:Activate()
+	end
+
+	local function dropdownEntrySetup(control, data, selected, reselectingDuringRebuild, enabled, active)
+		local dialogData = data and data.dialog and data.dialog.data
+
+		local dropdowns = data.dialog.dropdowns
+		if not dropdowns then
+			dropdowns = {}
+			data.dialog.dropdowns = dropdowns
+		end
+		local dropdown = control.dropdown
+		table.insert(dropdowns, dropdown)
+
+		dropdown:SetNormalColor(ZO_GAMEPAD_COMPONENT_COLORS.UNSELECTED_INACTIVE:UnpackRGB())
+		dropdown:SetHighlightedColor(ZO_GAMEPAD_COMPONENT_COLORS.SELECTED_ACTIVE:UnpackRGB())
+		dropdown:SetSelectedItemTextColor(selected)
+
+		SCREEN_NARRATION_MANAGER:RegisterDialogDropdown(data.dialog, dropdown)
+
+		dropdown:SetSortsItems(false)
+		dropdown:ClearItems()
+
+		for i = 1, #dropdownData do
+			local entryText = dropdownData[i].filterName
+			local newEntry = dropdown:CreateItemEntry(entryText, onSelectedCallback)
+			newEntry.index = i
+			zo_mixin(newEntry, dropdownData[i])
+			dropdown:AddItem(newEntry)
+		end
+
+		dropdown:UpdateItems()
+
+		local initialIndex = dropdownData.selectedIndex or 1
+		dropdown:SelectItemByIndex(initialIndex)
+	end
+
+	return self:BuildDropdownEntry(header, label, dropdownEntrySetup, callback, icon)
+end
+
+function UI_Shared:BuildTemplatesList()
+
+	local function conditionFunction()
+		local categoryData = self:GetTargetData()
+		if not categoryData then return false end
+		return categoryData.categoryType == CATEGORY_TYPE_ALL
+	end
+
+	if self.dropdownDataMain == nil then
+		local dropdownData = {}
+		for key, entry in pairs(LDM.Templates) do
+      for templateName, templateObj in pairs(entry) do
+        table.insert(dropdownData, {
+          filterName = key,
+          filterIndex = 1,
+        })
+      end
+		end
+		self.dropdownDataMain = dropdownData
+		local groupId = self:AddOptionTemplateGroup(function() return key end)
+	  self:AddOptionTemplate(groupId, function() return self:BuildDropdown(SI_GAMEPAD_CRAFTING_OPTIONS_FILTERS, label, self.dropdownDataMain, "/esoui/art/mail/mail_tabicon_inbox_up.dds") end, conditionFunction)
+	end
+end
+
+function UI_Shared:Initialize(control)
 	local listControl = control:GetNamedChild('Main'):GetNamedChild('List')
 
 	-- Initialize self as the list.
@@ -20,11 +130,13 @@ function UI:Initialize(control)
 	-- Initialize the right side tooltip.
 	self.scrollTooltip = control:GetNamedChild("SideContent"):GetNamedChild("Tooltip")
 
-	ZO_Scroll_Gamepad_SetScrollIndicatorSide(self.scrollTooltip.scrollIndicator, ZO_SharedGamepadNavQuadrant_4_Background, LEFT)
+	--ZO_Scroll_Gamepad_SetScrollIndicatorSide(self.scrollTooltip.scrollIndicator, ZO_SharedGamepadNavQuadrant_4_Background, LEFT)
 
-	self:InitializeKeybindDescriptor()
+	UI_TemplateList:InitializeKeybindDescriptor()
 
-	self.noItemsLabel:SetText(LDM.Lang.NO_MATCHES)
+  if next(LDM.Templates) == nil then
+	  self.noItemsLabel:SetText(LDM.Lang.NO_MATCHES)
+	end
 
 	self:SetOnSelectedDataChangedCallback(function(_, selectedData, oldData, reselectingDuringRebuild, listIndex)
 		self:OnSelectedDataChangedCallback(selectedData, oldData, reselectingDuringRebuild, listIndex)
@@ -54,7 +166,7 @@ function UI:Initialize(control)
 	self:AddDataTemplate("ZO_GamepadMenuEntryTemplateLowercase42", setupFunction, ZO_GamepadMenuEntryTemplateParametricListFunction, equalityFunction)
 	self:AddDataTemplateWithHeader("ZO_GamepadMenuEntryTemplateLowercase42", setupFunction, ZO_GamepadMenuEntryTemplateParametricListFunction, equalityFunction, "ZO_GamepadMenuEntryHeaderTemplate")
 
---	self:BuildOptionsList()
+	self:BuildTemplatesList()
 
 	local narrationInfo =
 	{
@@ -68,7 +180,7 @@ function UI:Initialize(control)
 	SCREEN_NARRATION_MANAGER:RegisterParametricList(self, narrationInfo)
 end
 
-function UI:GetHeaderData()
+function UI_TemplateList:GetHeaderData()
 	local mailView = MailView
 
 	return {
@@ -79,26 +191,29 @@ function UI:GetHeaderData()
 	}
 end
 
-function UI:InitializeCustomTabs()
+function UI_TemplateList:InitializeCustomTabs()
 	local mailView = MailView
 	local tabBarEntries = mailView.tabBarEntries
-	self.orginalHeaderData = MailView.baseHeaderData
+	self.origTabBarEntries = self.origTabBarEntries or mailView.tabBarEntries
+	self.orginalHeaderData = self.orginalHeaderData or MailView.baseHeaderData
 
-	local newtab = {
-		text = LDM.Lang.MAIL_PRESETS,
-		callback = function() self.owner:SwitchToFragment(self.fragment) end,
-	}
+  if self.origTabBarEntries == mailView.tabBarEntries then
+    local newtab = {
+      text = LDM.Lang.MAIL_PRESETS,
+      callback = function() MailView:SwitchToFragment(self.fragment) end,
+    }
 
-	table.insert(tabBarEntries, 1, newtab)
+    table.insert(tabBarEntries, 1, newtab)
 
-	self.tabBarEntries = tabBarEntries
-	mapInfo.tabBarEntries = tabBarEntries
-
-	ZO_GamepadGenericHeader_Refresh(mailView.header, self:GetHeaderData())
-	ZO_GamepadGenericHeader_SetActiveTabIndex(mailView.header, 1)
+    self.tabBarEntries = tabBarEntries
+    mailView.tabBarEntries = tabBarEntries
+	end
+  ZO_GamepadGenericHeader_Refresh(mailView.header, self:GetHeaderData())
+  ZO_GamepadGenericHeader_SetActiveTabIndex(mailView.header, 1)
+	self.tabAdded = true
 end
 
-function UI:InitializeKeybindDescriptor()
+function UI_TemplateList:InitializeKeybindDescriptor()
 
 	self.keybindStripDescriptor = {
 		alignment = KEYBIND_STRIP_ALIGN_LEFT,
@@ -131,7 +246,23 @@ function UI:InitializeKeybindDescriptor()
 	ZO_Gamepad_AddListTriggerKeybindDescriptors(self.keybindStripDescriptor, self)
 end
 
-function UI:Refresh()
+function UI_Shared:RefreshNoEntriesLabel()
+	self.noItemsLabel:SetHidden(not self:IsEmpty())
+end
+
+function UI_Shared:RefreshKeybind()
+	if self.fragment:IsHidden() then return end
+	KEYBIND_STRIP:UpdateKeybindButtonGroup(self.keybindStripDescriptor)
+end
+
+local function isVisible(visible)
+	if type(visible) == 'function' then
+		visible = visible()
+	end
+	return visible
+end
+
+function UI_TemplateList:Refresh()
 	self:Clear()
 	local templates = self.templates or {}
 	local lastFilterType
@@ -145,11 +276,11 @@ function UI:Refresh()
 			zo_mixin(entryData, data)
 
 			entryData.controlIndex = controlIndex
-			entryData:AddSubLabel(data.foundInZoneName)
+			entryData:AddSubLabel(data.subject)
 
 			if lastFilterType ~= data.filterType then
 				lastFilterType = data.filterType
-				entryData:SetHeader(getHeaderString('CATEGORY', data.filterType))
+				entryData:SetHeader(data.addon.." - "..data.name)
 				self:AddEntryWithHeader("ZO_GamepadMenuEntryTemplateLowercase42", entryData)
 			else
 				self:AddEntry("ZO_GamepadMenuEntryTemplateLowercase42", entryData)
@@ -165,32 +296,103 @@ function UI:Refresh()
 	self:RefreshKeybind()
 end
 
-function UI:Build(parent)
-  local control = CreateControlFromVirtual(owner.name .. name, parentControl:GetNamedChild('Main'), "LDM_List_Template")
-	self:Initialize(control)
+function UI_TemplateList:BuildTemplates()
+  local templateObj = {}
+  for key, entry in pairs(LDM.Templates) do
+    for templateName, templateObj in pairs(entry) do
+      table.insert(templateObj, {
+        filterType = 0,
+        addon = key,
+        name = templateName,
+        subject = entry.subject,
+        recipient = entry.recipient,
+        icon = "/esoui/art/mail/mail_tabicon_inbox_up.dds",
 
-	self.container = control
+        enabled = true,
+        visible = function() return true end,
 
-	self:BuildTemplates()
+
+        filter = {
+          index = 0,
+        },
+        callback = function(currentFilter)
+
+        end,
+      })
+    end
+  end
+  self.templates = templateObj
+end
+
+function UI_Shared:RefreshHeader()
+	local mailView = MailView
+	if self.fragment:IsHidden() then
+		ZO_GamepadGenericHeader_Refresh(mailView.header, mailView.baseHeaderData)
+	else
+		ZO_GamepadGenericHeader_Refresh(mailView.header, self:GetHeaderData())
+	end
+end
+
+function UI_Shared:OnShown()
+	self:RefreshHeader()
+end
+
+function UI_Shared:OnHidden()
+	self:RefreshHeader()
+end
+
+function UI_TemplateList:OnOpenMailbox()
+  EVENT_MANAGER:UnregisterForEvent("LDMmailboxInit", EVENT_MAIL_OPEN_MAILBOX)
+  self:BuildTemplates()
 	self:InitializeCustomTabs()
 	self:InitializeKeybindDescriptor()
 	self:Refresh()
+	local oldself = self
 
-	self.fragment:RegisterCallback("StateChange",  function(oldState, newState)
+	UI_Shared.fragment:RegisterCallback("StateChange",  function(oldState, newState)
 		if newState == SCENE_SHOWING then
-			self:Activate()
+			oldself:Activate()
 			KEYBIND_STRIP:AddKeybindButtonGroup(self.keybindStripDescriptor)
 
 			self:Refresh()
 
 		elseif newState == SCENE_SHOWN then
-			self:UpdateTooltip(self:GetTargetData())
+-- 			self:UpdateTooltip(self:GetTargetData())
 			self:OnShown()
 		elseif newState == SCENE_HIDDEN then
 			KEYBIND_STRIP:RemoveKeybindButtonGroup(self.keybindStripDescriptor)
 
 			self:Deactivate()
-			self:RefreshHeader()
+			UI_Shared:RefreshHeader()
 		end
 	end)
 end
+
+function UI_TemplateList:Build(control)
+	UI_Shared:Initialize(control)
+
+	self.container = control
+  EVENT_MANAGER:RegisterForEvent("LDMmailboxInit", EVENT_MAIL_OPEN_MAILBOX , function() self:OnOpenMailbox() end)
+end
+
+function LDM.changeState(index)
+  LDM.state = index
+end
+
+function UI_Shared:onCategoryChanged(categoryData, selectedIndex)
+  if not categoryData then return end
+
+  if categoryData.callback then
+    local filter = categoryData.filter or {}
+    self.selectedIndex = selectedIndex
+
+    LDM.changeState(filter.index)
+    categoryData.callback(filter)
+
+--     self.fragment:UpdateTooltip(self:GetTargetData())
+  end
+end
+
+CALLBACK_MANAGER:RegisterCallback('BMU_GAMEPAD_CATEGORY_CHANGED', function()
+  UI_Shared:onCategoryChanged(categoryData, selectedIndex)
+end)

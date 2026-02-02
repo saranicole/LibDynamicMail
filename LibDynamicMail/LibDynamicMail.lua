@@ -15,4 +15,8 @@ LibDynamicMail = LibDynamicMail or {}
 
 local LDM = LibDynamicMail
 
+function LDM_Initialize( ... )
+  LDM.UI.templateList:Build( ... )
+end
 
+LDM.RegisterTemplate("LDMTEST", "MYMAILTEMPLATE", { subject = "Welcome", body = "Hello!", receipient="Someone"})

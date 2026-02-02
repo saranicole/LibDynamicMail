@@ -33,8 +33,6 @@
 			</Controls>
 		</Control>
 		
-		<TopLevelControl name="LDM_TeleportList_Gamepad" inherits="LDM_List_Template" hidden="true"/>
-		
 		<TopLevelControl name="LDM_Category_Gamepad" inherits="LDM_List_Template" hidden="true">
 			<AnchorFill/>
 			<OnInitialized> LDM_Initialize(self) </OnInitialized>
