@@ -16,7 +16,8 @@ local function selectRelevantMail(event, mailId, templateName, functionName)
   local callback = Inbox.Callbacks[templateName]
         and Inbox.Callbacks[templateName][functionName]
   if not callback then return false end
-  Inbox.Callbacks[templateName][functionName]()
+  event_manager:UnregisterForEvent(templateName.."mailboxreadable", EVENT_MAIL_READABLE)
+  Inbox.Callbacks[templateName][functionName](event, mailId)
 end
 
 function Inbox:RegisterCallback(templateName, functionName, functionCallback)
@@ -31,30 +32,37 @@ function Inbox:RegisterEvents(templateName, functionName)
    end)
 end
 
-function Inbox:WatchMailByTemplateFieldValue(templateName, fieldKey, fieldValue, operator)
-  local template = LDM.GetTemplate(templateName)
+function Inbox:RetrieveActiveMailData(mailId)
+  RequestReadMail(mailId)
+  return MailInbox:GetActiveMailData()
+end
+
+function Inbox:CheckMailForTemplateFieldValue(mailId, templateName, fieldKey, operator)
+  RequestReadMail(mailId)
+  local mailData = MailInbox:GetActiveMailData()
+  local template = self:GetTemplate(templateName)
   if not template then d("|cFF0000[LDM]|r LibDynamicMail: Template not found") return false end
   if not operator or operator == "equals" then
-    if template[fieldKey] == fieldValue then
+    if template[fieldKey] == mailData[fieldKey] then
       return true
     end
   end
   if operator == "contains" then
-    if template[fieldKey]:find(fieldValue, 1, true) ~= nil then
+    if template[fieldKey]:find(mailData[fieldKey], 1, true) ~= nil then
       return true
     end
   end
   return false
 end
 
-function Inbox:WatchMailByTemplateSubject(templateName, operator)
-  self:WatchMailByTemplateFieldValue(templateName, "subject", fieldValue, operator)
+function Inbox:CheckMailForTemplateSubject(mailId, templateName, operator)
+  self:CheckMailForTemplateFieldValue(templateName, "subject", operator)
 end
 
-function Inbox:WatchMailByTemplateKeyword(templateName, operator)
-  self:WatchMailByTemplateFieldValue(templateName, "body", fieldValue, operator)
+function Inbox:CheckMailForTemplateKeyword(mailId, templateName, operator)
+  self:CheckMailForTemplateFieldValue(mailId, templateName, "body", operator)
 end
 
-function Inbox:WatchMailByTemplateSender(templateName, operator)
-  self:WatchMailByTemplateFieldValue(templateName, "recipient", fieldValue, operator)
+function Inbox:CheckMailForTemplateSender(mailId, templateName, operator)
+  self:CheckMailForTemplateFieldValue(templateName, "recipient", operator)
 end
