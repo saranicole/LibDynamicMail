@@ -48,4 +48,5 @@ function LDM:Initialize(vars, formatter)
   if formatter and next(formatter) then
     self.formatter = formatter
   end
+  self.savedVars.InboxCallbacks = {}
 end

@@ -7,6 +7,13 @@ if IsInGamepadPreferredMode() or IsConsoleUI() then
   mailSend = MAIL_GAMEPAD:GetSend()
 end
 
+local function NormalizeAccountName(name)
+    if not IsDecoratedDisplayName(name) then
+        return DecorateDisplayName(name)
+    end
+    return name
+end
+
 function LDM:PopulateCompose(templateName, values)
   local template = self:GetTemplate(templateName)
   if not template then d("|cFF0000[LDM]|r LibDynamicMail: Template not found") return false end
@@ -28,8 +35,16 @@ function LDM:PopulateCompose(templateName, values)
     end
   end
 
-  mailSend:InsertBodyText(parsedBody)
-  mailSend:ComposeMailTo(parsedRecipient, parsedSubject)
+  local decoratedRecipient = NormalizeAccountName(parsedRecipient)
+
+  if IsInGamepadPreferredMode() or IsConsoleUI() then
+    mailSend:InsertBodyText(parsedBody)
+    mailSend:ComposeMailTo(decoratedRecipient, parsedSubject)
+  else
+    mailSend.to:SetText(decoratedRecipient)
+    mailSend.subject:SetText(parsedSubject)
+    mailSend.body:SetText(parsedBody)
+    MAIN_MENU_KEYBOARD:ShowScene("mailSend")
+  end
 
 end
-
