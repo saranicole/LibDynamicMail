@@ -15,6 +15,7 @@ local function NormalizeAccountName(name)
 end
 
 local function populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+    EVENT_MANAGER:UnregisterForEvent("LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX)
     mailSend.initialBodyInsertText = parsedBody
     mailSend.initialContact = parsedRecipient
     mailSend.initialSubject = parsedSubject
