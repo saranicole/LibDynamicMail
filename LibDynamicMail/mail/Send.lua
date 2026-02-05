@@ -14,6 +14,12 @@ local function NormalizeAccountName(name)
     return name
 end
 
+local function populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+    mailSend.initialBodyInsertText = parsedBody
+    mailSend.initialContact = parsedRecipient
+    mailSend.initialSubject = parsedSubject
+end
+
 function LDM:PopulateCompose(templateName, values)
   local template = self:GetTemplate(templateName)
   if not template then d("|cFF0000[LDM]|r LibDynamicMail: Template not found") return false end
@@ -38,12 +44,15 @@ function LDM:PopulateCompose(templateName, values)
   local decoratedRecipient = NormalizeAccountName(parsedRecipient)
 
   if IsInGamepadPreferredMode() or IsConsoleUI() then
-    mailSend.initialBodyInsertText = parsedBody
-    mailSend.initialContact = parsedRecipient
-    mailSend.initialSubject = parsedSubject
     if IsInGamepadPreferredMode() then
+      populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
       MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
       ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
+    end
+    if IsConsoleUI() then
+      EVENT_MANAGER:RegisterForEvent("LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX , function()
+        populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+      end )
     end
   else
     mailSend.to:SetText(decoratedRecipient)
