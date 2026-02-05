@@ -14,8 +14,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-#      - name: Install dependencies
-#        run: pip3 install pipx md2bbcode
+      - name: Install dependencies
+        run: pip3 install pipx md2bbcode
 
       - name: Get Next Version
         id: semver
@@ -34,9 +34,11 @@ jobs:
         run: |
           addon_name="${{ env.REPO_NAME }}"
           version="${{ steps.semver.outputs.nextStrict }}"
+          formatted_version=$( echo "${version//./}" )
 
           echo "ADDON_NAME=$addon_name" >> $GITHUB_ENV
           echo "ADDON_VERSION=$version" >> $GITHUB_ENV
+          echo "ADDON_FORMATTED_VERSION=$formatted_version" >> $GITHUB_ENV
 
           echo "ZIP_FULL_NAME=${addon_name}-${version}.zip" >> $GITHUB_ENV
       - name: Create addon file
@@ -67,12 +69,12 @@ jobs:
           awk '/^## / { if (!found) { found=1; print; next } else { exit } } found' CHANGELOG.md > latest_changes.md
           cat latest_changes.md
 
-#      - name: Convert to bbcode for ESOUI
-#        run: |
-#          python3 -m pipx run md2bbcode README_ESOUI.bbcode > README_ESOUI.txt
+      - name: Convert to bbcode for ESOUI
+        run: |
+          python3 -m pipx run md2bbcode README_ESOUI.bbcode > README_ESOUI.txt
 
       - name: Create GitHub Release
-        #id: create_release
+        id: create_release
         uses: ncipollo/release-action@v1
         with:
           name: "${{ env.ADDON_VERSION }}"
@@ -84,15 +86,15 @@ jobs:
           allowUpdates: true
           makeLatest: true
 
-#      - name: Upload to ESOUI
-#        uses: m00nyONE/esoui-upload@v2
-#        with:
-#          api_key: ${{ secrets.ESOUI_API_KEY }}
-#          addon_id: ${{ vars.ESOUI_ADDON_ID }}
-#          version: ${{ env.ADDON_VERSION }}
-#          zip_file: "${{ github.workspace }}/${{ env.ADDON_NAME }}/${{ env.ZIP_FULL_NAME }}"
-#          changelog_file: latest_changes.md
-#          description_file: 'README_ESOUI.txt'
+      - name: Upload to ESOUI
+        uses: m00nyONE/esoui-upload@v2
+        with:
+          api_key: ${{ secrets.ESOUI_API_KEY }}
+          addon_id: ${{ vars.ESOUI_ADDON_ID }}
+          version: ${{ env.ADDON_VERSION }}
+          zip_file: "${{ github.workspace }}/${{ env.ADDON_NAME }}/${{ env.ZIP_FULL_NAME }}"
+          changelog_file: latest_changes.md
+          description_file: 'README_ESOUI.txt'
 
       - name: Upload to BNET
         uses: m00nyONE/bnet-upload@main

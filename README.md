@@ -7,5 +7,123 @@ unstable, use at your own risk
 ## Description
 Allows addons to generate preset mail templates and trigger email processing events.  Pairs with LibTextFormat to create dynamic mail.
 
+### Reason for being
+
+Allows addons to generate preset mail templates and trigger email processing events.  Pairs with LibTextFormat to create dynamic mail.
+
+### Platform Support
+
+Works with all platforms - leverages Event manager on console to populate send fields since directly opening the mail view is prohibited.
+
+## Basic Usage
+
+### Setup
+
+The first thing LibDynamicMail requires you to do is to initialize it with a saved variables "namespace" so that it can save filters and similar objects specific to your addon.
+
+First declare your saved vars
+```
+MyAddon.savedVars = ZO_SavedVars:NewAccountWide("MyAddon_Vars", 1, nil, {
+libNamespace = {
+  LDM = {}
+}})
+
+```
+
+Then initialize LibDynamicMail with the object.
+```
+MyAddon.LDM = MyAddon.LDM or LibDynamicMail:New(MyAddon.savedVars.libNamespace.LDM)
+```
+
+### Templates
+
+Templates are named objects that have the needed fields for sending or parsing mail.  You will need to create a template before you can generate a send request or match on a received mail item.
+
+```
+local myrecipient = "BestFriend"
+local mysubject = "Request to chat"
+local mybody = "Chat sometime"
+
+MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
+    recipient = myrecipient,
+    subject   = mysubject,
+    body      = mybody
+  })
+```
+
+### Sending
+
+To send mail using a template, you use the "PopulateCompose" method, optionally overriding the original values with further variables:
+
+```
+local sendObject = {
+  recipient = "BFF",
+  subject = "How was your day",
+  body = "Hoping you are doing well"
+}
+MyAddon.LDM:PopulateCompose("MyAddonRequest", sendObject)
+```
+
+If you are using LibTextFormat, the sendObject will be converted into a Scope for you within the library method.
+
+[color=red]Note that on console PopulateCompose will not open the send mail view.[/color]
+
+You will need to let the user know that they have to navigate to the mail send view themselves in order to see the filled values.
+
+You can use a method like the following to do that:
+```
+local function makeAnnouncement(text, sound)
+  local params = CENTER_SCREEN_ANNOUNCE:CreateMessageParams(CSA_CATEGORY_LARGE_TEXT, sound)
+			params:SetCSAType(CENTER_SCREEN_ANNOUNCE_TYPE_POI_DISCOVERED)
+			params:SetText(text)
+			CENTER_SCREEN_ANNOUNCE:AddMessageWithParams(params)
+end
+```
+
+### Processing Received Mail
+
+With LibDynamicMail, your addon handles the initial event of mailbox opening.  This is intentionally left to the originating addon so that it controls when mail processing starts.
+
+Somewhere in your addon player activated code:
+```
+EVENT_MANAGER:RegisterForEvent(MyAddonName.."mailbox", EVENT_MAIL_OPEN_MAILBOX , function(mailId) myAddonCallback(mailId) end )
+```
+
+Then the code for myAddonCallback should look like:
+
+```
+local function myAddonCallback()
+  MyAddon.LDM:RegisterInboxEvents("Requested", "Scan")
+
+  MyAddon.LDM:RegisterInboxCallback("Requested", "Scan", function(mailId)
+    local scanResults = nil
+    if not MyAddon.LDM:CheckMailForTemplateSubject(mailId, "Requested", "equals") then
+      scanResults = MyAddon.LDM:RetrieveActiveMailData(mailId)
+      -- do something with the scan results - it will have the same fields as the template
+    end
+  end)
+end
+```
+
+What these function calls do:
+
+RegisterInboxEvents - registers the EVENT_MAIL_READABLE based on the template name (note that this should happen before the callbacks are registered since they are dynamic)
+
+RegisterInboxCallback - registers the callback to happen on a readable mail being available
+
+CheckMailForTemplateSubject - checks the received mail for an incoming mail subject that matches your "Requested" template subject
+
+RetrieveActiveMailData - retrieves the data from the received mail
+
+
+Note that there are also "CheckMailForTemplateKeyword" and "CheckMailForTemplateSender" that process the body and sender.
+
+### TBD
+
+A process to delete mail when matches, as well as for gold, attachments, COD, and similar are work in progress.
+
 ### Links
-[ESO Mods](https://mods.bethesda.net/en/elderscrollsonline/details/256dc81e-d505-4eb6-9a51-1d7ffc360c69/House_Hotkey)
+
+[ESOUI](https://www.esoui.com/downloads/info4379-LibDynamicMail.html)
+
+[ESO Mods](https://mods.bethesda.net/en/elderscrollsonline/details/d98298fa-549a-4a02-ad04-7c3f0dc92445/LibDynamicMail)
