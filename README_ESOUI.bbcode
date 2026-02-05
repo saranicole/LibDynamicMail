@@ -18,9 +18,13 @@ The first thing LibDynamicMail requires you to do is to initialize it with a sav
 
 First declare your saved vars
 [code]
-MyAddon.savedVars = ZO_SavedVars:NewAccountWide("MyAddon_Vars", 1, nil, {
+
+MyAddon.savedVars = ZO_SavedVars:NewAccountWide("MyAddon_Vars", 1, GetWorldName(), {
+
 libNamespace = {
+
   LDM = {}
+
 }})
 
 [/code]
@@ -35,15 +39,24 @@ MyAddon.LDM = MyAddon.LDM or LibDynamicMail:New(MyAddon.savedVars.libNamespace.L
 Templates are named objects that have the needed fields for sending or parsing mail.  You will need to create a template before you can generate a send request or match on a received mail item.
 
 [code]
+
 local myrecipient = "BestFriend"
+
 local mysubject = "Request to chat"
+
 local mybody = "Chat sometime"
 
+
 MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
+
     recipient = myrecipient,
+
     subject   = mysubject,
+
     body      = mybody
+
   })
+
 [/code]
 
 [size=+2]Sending[/size]
@@ -51,12 +64,19 @@ MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
 To send mail using a template, you use the "PopulateCompose" method, optionally overriding the original values with further variables:
 
 [code]
+
 local sendObject = {
+
   recipient = "BFF",
+
   subject = "How was your day",
+
   body = "Hoping you are doing well"
+
 }
+
 MyAddon.LDM:PopulateCompose("MyAddonRequest", sendObject)
+
 [/code]
 
 If you are using LibTextFormat, the sendObject will be converted into a Scope for you within the library method.
@@ -67,12 +87,19 @@ You will need to let the user know that they have to navigate to the mail send v
 
 You can use a method like the following to do that:
 [code]
+
 local function makeAnnouncement(text, sound)
+
   local params = CENTER_SCREEN_ANNOUNCE:CreateMessageParams(CSA_CATEGORY_LARGE_TEXT, sound)
+
 			params:SetCSAType(CENTER_SCREEN_ANNOUNCE_TYPE_POI_DISCOVERED)
+
 			params:SetText(text)
+
 			CENTER_SCREEN_ANNOUNCE:AddMessageWithParams(params)
+
 end
+
 [/code]
 
 [size=+2]Processing Received Mail[/size]
@@ -81,24 +108,38 @@ With LibDynamicMail, your addon handles the initial event of mailbox opening.  T
 
 Somewhere in your addon player activated code:
 [code]
+
 EVENT_MANAGER:RegisterForEvent(MyAddonName.."mailbox", EVENT_MAIL_OPEN_MAILBOX , function(mailId) myAddonCallback(mailId) end )
+
 [/code]
 
 Then the code for myAddonCallback should look like:
 
 [code]
+
 local function myAddonCallback()
+
   MyAddon.LDM:RegisterInboxEvents("Requested", "Scan")
 
+
   MyAddon.LDM:RegisterInboxCallback("Requested", "Scan", function(mailId)
+
     local scanResults = nil
+
     if not MyAddon.LDM:CheckMailForTemplateSubject(mailId, "Requested", "equals") then
+
       scanResults = MyAddon.LDM:RetrieveActiveMailData(mailId)
+
       -- do something with the scan results - it will have the same fields as the template
+
     end
+
   end)
+
 end
+
 [/code]
+
 
 What these function calls do:
 
