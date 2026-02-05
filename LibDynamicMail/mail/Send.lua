@@ -45,15 +45,14 @@ function LDM:PopulateCompose(templateName, values)
   local decoratedRecipient = NormalizeAccountName(parsedRecipient)
 
   if IsInGamepadPreferredMode() or IsConsoleUI() then
-    if IsInGamepadPreferredMode() then
-      populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
-      MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
-      ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
-    end
     if IsConsoleUI() then
       EVENT_MANAGER:RegisterForEvent("LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX , function()
         populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
       end )
+    else
+      populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+      MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
+      ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
     end
   else
     mailSend.to:SetText(decoratedRecipient)
