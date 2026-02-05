@@ -39,7 +39,10 @@ function LDM:PopulateCompose(templateName, values)
 
   if IsInGamepadPreferredMode() or IsConsoleUI() then
     mailSend:InsertBodyText(parsedBody)
-    mailSend:ComposeMailTo(decoratedRecipient, parsedSubject)
+    mailSend.initialContact = parsedRecipient
+    mailSend.initialSubject = parsedSubject
+    MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
+    ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
   else
     mailSend.to:SetText(decoratedRecipient)
     mailSend.subject:SetText(parsedSubject)
