@@ -14,8 +14,8 @@ local function NormalizeAccountName(name)
     return name
 end
 
-local function populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
-    EVENT_MANAGER:UnregisterForEvent("LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX)
+local function populateGamepadFields(templateName, parsedRecipient, parsedSubject, parsedBody)
+    EVENT_MANAGER:UnregisterForEvent(templateName.."LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX)
     mailSend.initialBodyInsertText = parsedBody
     mailSend.initialContact = parsedRecipient
     mailSend.initialSubject = parsedSubject
@@ -46,11 +46,11 @@ function LDM:PopulateCompose(templateName, values)
 
   if IsInGamepadPreferredMode() or IsConsoleUI() then
     if IsConsoleUI() then
-      EVENT_MANAGER:RegisterForEvent("LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX , function()
-        populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+      EVENT_MANAGER:RegisterForEvent(templateName.."LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX , function()
+        populateGamepadFields(templateName, parsedRecipient, parsedSubject, parsedBody)
       end )
     else
-      populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+      populateGamepadFields(templateName, parsedRecipient, parsedSubject, parsedBody)
       MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
       ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
     end
