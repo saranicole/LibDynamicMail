@@ -120,7 +120,7 @@ Note that there are also "CheckMailForTemplateKeyword" and "CheckMailForTemplate
 
 ### TBD
 
-A process to delete mail when matches, as well as for gold, attachments, COD, and similar are work in progress.
+A process to delete mail when it is processed successfully, as well as for processing/sending gold, attachments, COD, and similar are work in progress.
 
 ### Links
 
