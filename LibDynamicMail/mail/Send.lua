@@ -38,7 +38,7 @@ function LDM:PopulateCompose(templateName, values)
   local decoratedRecipient = NormalizeAccountName(parsedRecipient)
 
   if IsInGamepadPreferredMode() or IsConsoleUI() then
-    mailSend:InsertBodyText(parsedBody)
+    mailSend.initialBodyInsertText = parsedBody
     mailSend.initialContact = parsedRecipient
     mailSend.initialSubject = parsedSubject
     MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
