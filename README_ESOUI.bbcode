@@ -103,15 +103,19 @@ end
 What these function calls do:
 
 RegisterInboxEvents - registers the EVENT_MAIL_READABLE based on the template name (note that this should happen before the callbacks are registered since they are dynamic)
+
 RegisterInboxCallback - registers the callback to happen on a readable mail being available
+
 CheckMailForTemplateSubject - checks the received mail for an incoming mail subject that matches your "Requested" template subject
+
 RetrieveActiveMailData - retrieves the data from the received mail
+
 
 Note that there are also "CheckMailForTemplateKeyword" and "CheckMailForTemplateSender" that process the body and sender.
 
 [size=+2]TBD[/size]
 
-A process to delete mail when matches, as well as for gold, attachments, COD, and similar are work in progress.
+A process to delete mail when it is processed successfully, as well as for processing/sending gold, attachments, COD, and similar are work in progress.
 
 [size=+2]Links[/size]
 
