@@ -2,9 +2,9 @@
 ## Author: Saranicole1980
 ## Version: ${ADDON_VERSION}
 ## APIVersion: 101048 101049
-## AddOnVersion: 1
+## AddOnVersion: ${ADDON_FORMATTED_VERSION}
 ## Description: Dynamic mail templates
-## OptionalDependsOn: LibTextFormat
+## OptionalDependsOn: LibTextFormat>=007
 ## IsLibrary: true
 
 LibDynamicMail.lua

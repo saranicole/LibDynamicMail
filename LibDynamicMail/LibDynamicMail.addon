@@ -1,10 +1,10 @@
 ## Title: LibDynamicMail
 ## Author: Saranicole1980
-## Version: 0.0.1
+## Version: 0.1.2
 ## APIVersion: 101048 101049
-## AddOnVersion: 1
+## AddOnVersion: 012
 ## Description: Dynamic mail templates
-## OptionalDependsOn: LibTextFormat
+## OptionalDependsOn: LibTextFormat>007
 ## IsLibrary: true
 
 LibDynamicMail.lua
