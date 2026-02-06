@@ -100,6 +100,9 @@ local function myAddonCallback()
     if not MyAddon.LDM:CheckMailForTemplateSubject(mailId, "Requested", "equals") then
       scanResults = MyAddon.LDM:RetrieveActiveMailData(mailId)
       -- do something with the scan results - it will have the same fields as the template
+      -- safe delete (does not prompt the user if you set forceBool to true)
+      
+      MyAddon.LDM:SafeDeleteMail(mailId, forceBool)
     end
   end)
 end
@@ -120,7 +123,7 @@ Note that there are also "CheckMailForTemplateKeyword" and "CheckMailForTemplate
 
 ### TBD
 
-A process to delete mail when it is processed successfully, as well as for processing/sending gold, attachments, COD, and similar are work in progress.
+A means of processing/sending gold, attachments, COD, and similar are work in progress.
 
 ### Links
 
