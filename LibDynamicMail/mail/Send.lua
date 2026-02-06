@@ -31,13 +31,13 @@ function LDM:PopulateCompose(templateName, values)
 
   if self.formatter and values then
     local scope = self.formatter.Scope(values)
-    if values.recipient then
+    if template.recipient then
       parsedRecipient = self.formatter:format(template.recipient, scope)
     end
-    if values.subject then
+    if template.subject then
       parsedSubject = self.formatter:format(template.subject, scope)
     end
-    if values.body then
+    if template.body then
       parsedBody = self.formatter:format(template.body, scope)
     end
   end
