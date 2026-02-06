@@ -29,6 +29,18 @@ function LDM:RegisterInboxEvents(templateName, functionName)
    end)
 end
 
+function LDM:SafeDeleteMail(mailId, forceBool)
+  local requestResult = RequestReadMail(mailId)
+  if requestResult ~= nil and requestResult <= REQUEST_READ_MAIL_RESULT_SUCCESS_SERVER_REQUESTED then
+    DeleteMail(mailId, forceBool)
+  else
+    zo_callLater(function()
+        self:SafeDeleteMail(mailId, forceBool)
+
+    end, math.max(GetLatency()+10, 100))
+  end
+end
+
 local function getBody()
   if IsConsoleUI() or IsInGamepadPreferredMode() then
     local control = MailInbox.control:GetNamedChild("Inbox"):GetNamedChild("RightPane"):GetNamedChild("Container"):GetNamedChild("Inbox")
