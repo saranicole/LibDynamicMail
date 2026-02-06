@@ -1,3 +1,6 @@
+## 2025.02.06
+- Tweak to formatter integration with LibTextFormat
+
 ## 2025.02.05
 - Use eventmanager to manage compose on Console
 - Add inbox mail safe deletion
