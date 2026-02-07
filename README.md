@@ -86,27 +86,101 @@ With LibDynamicMail, your addon handles the initial event of mailbox opening.  T
 
 Somewhere in your addon player activated code:
 ```
+
 EVENT_MANAGER:RegisterForEvent(MyAddonName.."mailbox", EVENT_MAIL_OPEN_MAILBOX , function(mailId) myAddonCallback(mailId) end )
-```
-
-Then the code for myAddonCallback should look like:
 
 ```
+
+If you are processing all mail that matches the values in your template, you will need two events and two callback, one pair that processes the mail entries into a list of mail Ids, and one pair that performs a callback on matching Ids.
+
+The first parameter to each of these functions is the name of a template registered with the RegisterTemplate function.  The template will provide the fields and values for matching mail messages.
+
+The second parameter is the callback namespace - it will be the key for registering/unregistering mail events for your code execution.
+
+```
+
 local function myAddonCallback()
-  MyAddon.LDM:RegisterInboxEvents("Requested", "Scan")
 
-  MyAddon.LDM:RegisterInboxCallback("Requested", "Scan", function(mailId)
-    local scanResults = nil
-    if not MyAddon.LDM:CheckMailForTemplateSubject(mailId, "Requested", "equals") then
-      scanResults = MyAddon.LDM:RetrieveActiveMailData(mailId)
-      -- do something with the scan results - it will have the same fields as the template
-      -- safe delete (does not prompt the user if you set forceBool to true)
-      
-      MyAddon.LDM:SafeDeleteMail(mailId, forceBool)
-    end
+  MyAddon.LDM:RegisterInboxEvents("Requested", "Scan")
+  MyAddon.LDM:RegisterInboxEvents("Requested", "Process")
+
+  MyAddon.LDM:RegisterInboxCallback("Requested", "Scan", function(event, mailId)
+
+    MyAddon.LDM.mailIds = self.mailInstance:FetchMailIdsForTemplateSubject("Requested")
+
+  -- note that since we did not pass true at the end, no need to unregister the mail read event
+
   end)
+
+
+  MyAddon.LDM:RegisterInboxCallback("Requested", "Process", function(event, mailId)
+
+      local function isValueInTable(table, element)
+
+        for _, v in ipairs(table) do
+
+          if element == v then
+
+            return true
+
+          end
+
+        end
+
+      return false
+
+      end
+
+
+      if not MyAddon.LDM.mailIds then
+
+        return
+
+      end
+
+
+      if isValueInTable(self.mailInstance.mailIds, mailId) then
+
+        -- note that RetrieveMailData takes a mail id and does NOT return the body
+
+        local scanResults = MyAddon.LDM:RetrieveMailData(mailId)
+
+        if not scanResults then
+
+          return
+
+        end
+
+
+        scanResults.body = MyAddon.LDM:RetrieveActiveMailBody()
+
+        if MyAddon.settings.deleteMatchingOnRead then
+
+          MyAddon.LDM:SafeDeleteMail(mailId, true)
+
+        end
+
+    end
+    -- processing requires that you call the unregister the read event in your callback
+
+    -- add true as the last argument to RegisterInboxCallback to get this processing behavior
+
+    MyAddon.LDM:UnregisterInboxReadEvents("Process")
+
+    end
+
+  -- adding true to the end allows you to continue to read mail after the first one has been processed
+
+  -- however it also means you must call the function to unregister the inbox read events
+  end, true)
+
+  end)
+
 end
+
 ```
+
+
 
 What these function calls do:
 
@@ -114,12 +188,19 @@ RegisterInboxEvents - registers the EVENT_MAIL_READABLE based on the template na
 
 RegisterInboxCallback - registers the callback to happen on a readable mail being available
 
-CheckMailForTemplateSubject - checks the received mail for an incoming mail subject that matches your "Requested" template subject
+FetchMailIdsForTemplateSubject - returns the mail ids of the received mail for any incoming mail with the subject that matches your "Requested" template subject
 
-RetrieveActiveMailData - retrieves the data from the received mail
+RetrieveMailData - takes a mail Id and retrieves all of the mail data except for the mail body (the text of the message)
+
+RetrieveActiveMailBody - returns the body of the active (focused) mail message
 
 
-Note that there are also "CheckMailForTemplateKeyword" and "CheckMailForTemplateSender" that process the body and sender.
+### Thanks and Credit
+
+Although it was not a one to one port, I took much of my inspiration from Dolgubon's hireling mail handling in [LazyWritCrafter](https://www.esoui.com/downloads/info1346-DolgubonsLazyWritCrafter.html).
+
+Thank you [Dolgubon](https://www.esoui.com/forums/member.php?u=23366)!
+
 
 ### TBD
 

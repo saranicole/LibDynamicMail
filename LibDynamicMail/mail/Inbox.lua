@@ -12,19 +12,26 @@ function LDM:selectRelevantMail(event, mailId, templateName, functionName)
   local senderDisplayName, senderCharacterName, subject, firstItemIcon, unread, fromSystem, fromCS, returned, numAttachments, attachedMoney, codAmount, expiresInDays, secsSinceReceived, category = GetMailItemInfo(mailId)
   local callback = self.savedVars.InboxCallbacks[templateName]
         and self.savedVars.InboxCallbacks[templateName][functionName]
+        and self.savedVars.InboxCallbacks[templateName][functionName]["func"]
   if not callback then return false end
-  event_manager:UnregisterForEvent(templateName.."mailboxreadable", EVENT_MAIL_READABLE)
-  self.savedVars.InboxCallbacks[templateName][functionName](event, mailId)
+  self.savedVars.InboxCallbacks[templateName][functionName]["func"](event, mailId)
+  if not self.savedVars.InboxCallbacks[templateName][functionName]["preserveReadableEvent"] then
+    event_manager:UnregisterForEvent(functionName.."mailboxreadable", EVENT_MAIL_READABLE)
+  end
 end
 
-function LDM:RegisterInboxCallback(templateName, functionName, functionCallback)
+function LDM:UnregisterInboxReadEvents(functionName)
+  event_manager:UnregisterForEvent(functionName.."mailboxreadable", EVENT_MAIL_READABLE)
+end
+
+function LDM:RegisterInboxCallback(templateName, functionName, functionCallback, preserveReadableEvent)
   self.savedVars.InboxCallbacks = self.savedVars.InboxCallbacks or {}
   self.savedVars.InboxCallbacks[templateName] = self.savedVars.InboxCallbacks[templateName] or {}
-  self.savedVars.InboxCallbacks[templateName][functionName] = functionCallback
+  self.savedVars.InboxCallbacks[templateName][functionName] = { func = functionCallback, preserveReadableEvent = preserveReadableEvent }
 end
 
 function LDM:RegisterInboxEvents(templateName, functionName)
-  event_manager:RegisterForEvent(templateName.."mailboxreadable", EVENT_MAIL_READABLE, function(event, mailId)
+  event_manager:RegisterForEvent(functionName.."mailboxreadable", EVENT_MAIL_READABLE, function(event, mailId)
     self:selectRelevantMail(event, mailId, templateName, functionName)
    end)
 end
@@ -41,7 +48,7 @@ function LDM:SafeDeleteMail(mailId, forceBool)
   end
 end
 
-local function getBody()
+function LDM:RetrieveActiveMailBody()
   if IsConsoleUI() or IsInGamepadPreferredMode() then
     local control = MailInbox.control:GetNamedChild("Inbox"):GetNamedChild("RightPane"):GetNamedChild("Container"):GetNamedChild("Inbox")
    return ZO_MailView_GetBody_Gamepad(control)
@@ -50,17 +57,40 @@ local function getBody()
   end
 end
 
-function LDM:RetrieveActiveMailData(mailId)
-  RequestReadMail(mailId)
-  local mailData = MailInbox:GetActiveMailData()
-  mailData.body = getBody()
-  return mailData
+function LDM:RetrieveMailData(mailId)
+  local senderDisplayName, senderCharacterName, subject, firstItemIcon, unread, fromSystem, fromCS, returned, numAttachments, attachedMoney, codAmount, expiresInDays, secsSinceReceived, category = GetMailItemInfo(mailId)
+  return {
+    subject = subject,
+    returned = returned,
+    senderDisplayName = senderDisplayName,
+    senderCharacterName = senderCharacterName,
+    expiresInDays = expiresInDays,
+    unread = unread,
+    numAttachments = numAttachments,
+    attachedMoney = attachedMoney,
+    codAmount = codAmount,
+    secsSinceReceived = secsSinceReceived,
+    fromSystem = fromSystem,
+    fromCS = fromCS,
+    isFromPlayer = isFromPlayer,
+    GetFormattedSubject = GetFormattedSubject,
+    GetFormattedReplySubject = GetFormattedReplySubject,
+    GetExpiresText = GetExpiresText,
+    GetReceivedText = GetReceivedText,
+    isReadInfoReady = isReadInfoReady,
+    IsExpirationImminent = IsExpirationImminent,
+    firstItemIcon = firstItemIcon,
+    category = category
+  }
 end
 
 function LDM:CheckMailForTemplateFieldValue(mailId, templateName, fieldKey, operator)
-  RequestReadMail(mailId)
-  local mailData = MailInbox:GetActiveMailData()
-  mailData.body = getBody()
+  local senderDisplayName, senderCharacterName, subject, firstItemIcon, unread, fromSystem, fromCS, returned, numAttachments, attachedMoney, codAmount, expiresInDays, secsSinceReceived, category = GetMailItemInfo(nextMailId)
+
+  local mailData = {
+    senderDisplayName = senderDisplayName,
+    subject = subject
+  }
   local template = self:GetTemplate(templateName)
   if not template then d("|cFF0000[LDM]|r LibDynamicMail: Template not found") return false end
   if not operator or operator == "equals" then
@@ -76,14 +106,51 @@ function LDM:CheckMailForTemplateFieldValue(mailId, templateName, fieldKey, oper
   return false
 end
 
+function LDM:FetchMailIdsForTemplateFieldValue(templateName, fieldKey, operator, mailId, mailIds)
+  local nextMailId = GetNextMailId(mailId)
+  if not nextMailId then
+    return mailIds
+  end
+  mailIds = mailIds or {}
+  local mailData = {}
+
+  local senderDisplayName, senderCharacterName, subject, firstItemIcon, unread, fromSystem, fromCS, returned, numAttachments, attachedMoney, codAmount, expiresInDays, secsSinceReceived, category = GetMailItemInfo(nextMailId)
+
+  local nextMail = {
+    senderDisplayName = senderDisplayName,
+    subject = subject,
+  }
+
+  -- body search is not implemented
+  local template = self:GetTemplate(templateName)
+
+  if not template then d("|cFF0000[LDM]|r LibDynamicMail: Template not found") return false end
+  if not operator or operator == "equals" then
+    if template[fieldKey] == nextMail[fieldKey] then
+      table.insert(mailIds, nextMailId)
+    end
+  end
+  if operator == "contains" then
+    if template[fieldKey]:find(nextMail[fieldKey], 1, true) ~= nil then
+      table.insert(mailIds, nextMailId)
+    end
+  end
+  return self:FetchMailIdsForTemplateFieldValue(templateName, fieldKey, operator, nextMailId, mailIds)
+end
+
 function LDM:CheckMailForTemplateSubject(mailId, templateName, operator)
   return self:CheckMailForTemplateFieldValue(mailId, templateName, "subject", operator)
 end
 
-function LDM:CheckMailForTemplateKeyword(mailId, templateName, operator)
-  return self:CheckMailForTemplateFieldValue(mailId, templateName, "body", operator)
+function LDM:FetchMailIdsForTemplateSubject(templateName, operator)
+  local mailIds = self:FetchMailIdsForTemplateFieldValue(templateName, "subject", operator)
+  return mailIds
 end
 
 function LDM:CheckMailForTemplateSender(mailId, templateName, operator)
   return self:CheckMailForTemplateFieldValue(mailId, templateName, "senderDisplayName", operator)
+end
+
+function LDM:FetchMailIdsForTemplateSender(templateName, operator)
+  return self:FetchMailIdsForTemplateFieldValue(templateName, "senderDisplayName", operator)
 end

@@ -1,3 +1,8 @@
+## 2025.02.07
+- Added support for processing multiple mail entries matching a pattern
+- Added support for delaying read mail event unregister
+- Updated doc and gave credit to Dolgubon for their inspiration
+
 ## 2025.02.06
 - Tweak to formatter integration with LibTextFormat
 
