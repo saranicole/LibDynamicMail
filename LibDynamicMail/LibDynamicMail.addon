@@ -4,13 +4,9 @@
 ## APIVersion: 101048 101049
 ## AddOnVersion: 012
 ## Description: Dynamic mail templates
-## OptionalDependsOn: LibTextFormat>007
 ## IsLibrary: true
 
 LibDynamicMail.lua
 
-core/TemplateManager.lua
-
-mail/Helpers.lua
 mail/Inbox.lua
 mail/Send.lua

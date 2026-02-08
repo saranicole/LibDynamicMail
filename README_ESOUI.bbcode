@@ -61,21 +61,20 @@ MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
 
 [size=+2]Sending[/size]
 
-To send mail using a template, you use the "PopulateCompose" method, optionally overriding the original values with further variables:
+To send mail using a template, you use the "ComposeMail" method, optionally overriding the original values with further variables:
 
 [code]
 
-local sendObject = {
+local recipient = "BFF",
 
-  recipient = "BFF",
+local subject = "How was your day"
 
-  subject = "How was your day",
+local body = "Hoping you are doing well"
 
-  body = "Hoping you are doing well"
 
-}
+-- Passing true to sendNow will trigger an immediate send.  Passing nil or false will populate the initial values in the Send Mail view.
 
-MyAddon.LDM:PopulateCompose("MyAddonRequest", sendObject)
+MyAddon.LDM:ComposeMail(recipient, subject, body, sendNow)
 
 [/code]
 
@@ -113,29 +112,27 @@ EVENT_MANAGER:RegisterForEvent(MyAddonName.."mailbox", EVENT_MAIL_OPEN_MAILBOX ,
 
 [/code]
 
-If you are processing all mail that matches the values in your template, you will need two events and two callback, one pair that processes the mail entries into a list of mail Ids, and one pair that performs a callback on matching Ids.
+If you are processing all mail that matches the search values, you will need two events and two callback, one pair that processes the mail entries into a list of mail Ids, and one pair that performs a callback on matching Ids.
 
-The first parameter to each of these functions is the name of a template registered with the RegisterTemplate function.  The template will provide the fields and values for matching mail messages.
-
-The second parameter is the callback namespace - it will be the key for registering/unregistering mail events for your code execution.
+The parameter is the callback namespace - it will be the key for registering/unregistering mail events for your code execution.
 
 [code]
 
 local function myAddonCallback()
 
-  MyAddon.LDM:RegisterInboxEvents("Requested", "Scan")
-  MyAddon.LDM:RegisterInboxEvents("Requested", "Process")
+  MyAddon.LDM:RegisterInboxEvents(MyAddon.Name.."Scan")
+  MyAddon.LDM:RegisterInboxEvents(MyAddon.Name.."Process")
 
-  MyAddon.LDM:RegisterInboxCallback("Requested", "Scan", function(event, mailId)
+  MyAddon.LDM:RegisterInboxCallback(MyAddon.Name.."Scan", function(event, mailId)
 
-    MyAddon.LDM.mailIds = self.mailInstance:FetchMailIdsForTemplateSubject("Requested")
+    MyAddon.LDM.mailIds = self.mailInstance:FetchMailIdsForSubject("mysearchvalue")
 
   -- note that since we did not pass true at the end, no need to unregister the mail read event
 
   end)
 
 
-  MyAddon.LDM:RegisterInboxCallback("Requested", "Process", function(event, mailId)
+  MyAddon.LDM:RegisterInboxCallback(MyAddon.Name.."Process", function(event, mailId)
 
       local function isValueInTable(table, element)
 
@@ -210,7 +207,7 @@ RegisterInboxEvents - registers the EVENT_MAIL_READABLE based on the template na
 
 RegisterInboxCallback - registers the callback to happen on a readable mail being available
 
-FetchMailIdsForTemplateSubject - returns the mail ids of the received mail for any incoming mail with the subject that matches your "Requested" template subject
+FetchMailIdsForSubject - returns the mail ids of the received mail for any incoming mail with the subject that matches your search value
 
 RetrieveMailData - takes a mail Id and retrieves all of the mail data except for the mail body (the text of the message)
 

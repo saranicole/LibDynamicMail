@@ -14,51 +14,37 @@ local function NormalizeAccountName(name)
     return name
 end
 
-local function populateGamepadFields(templateName, parsedRecipient, parsedSubject, parsedBody)
-    EVENT_MANAGER:UnregisterForEvent(templateName.."LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX)
+local function populateGamepadFields(parsedRecipient, parsedSubject, parsedBody)
+    EVENT_MANAGER:UnregisterForEvent(parsedRecipient.."LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX)
     mailSend.initialBodyInsertText = parsedBody
     mailSend.initialContact = parsedRecipient
     mailSend.initialSubject = parsedSubject
 end
 
-function LDM:PopulateCompose(templateName, values)
-  local template = self:GetTemplate(templateName)
-  if not template then d("|cFF0000[LDM]|r LibDynamicMail: Template not found") return false end
+function LDM:ComposeMail(to, subject, body, sendNow)
+  local decoratedRecipient = NormalizeAccountName(to)
 
-  local parsedSubject = template.subject
-  local parsedRecipient = template.recipient
-  local parsedBody = template.body
-
-  if self.formatter and values then
-    local scope = self.formatter.Scope(values)
-    if template.recipient then
-      parsedRecipient = self.formatter:format(template.recipient, scope)
-    end
-    if template.subject then
-      parsedSubject = self.formatter:format(template.subject, scope)
-    end
-    if template.body then
-      parsedBody = self.formatter:format(template.body, scope)
-    end
-  end
-
-  local decoratedRecipient = NormalizeAccountName(parsedRecipient)
-
-  if IsInGamepadPreferredMode() or IsConsoleUI() then
-    if IsConsoleUI() then
-      EVENT_MANAGER:RegisterForEvent(templateName.."LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX , function()
-        populateGamepadFields(templateName, parsedRecipient, parsedSubject, parsedBody)
-      end )
-    else
-      populateGamepadFields(templateName, parsedRecipient, parsedSubject, parsedBody)
-      MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
-      ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
-    end
+  if sendNow then
+    RequestOpenMailbox()
+    SendMail(decoratedRecipient, subject, body)
+    CloseMailbox()
   else
-    mailSend.to:SetText(decoratedRecipient)
-    mailSend.subject:SetText(parsedSubject)
-    mailSend.body:SetText(parsedBody)
-    MAIN_MENU_KEYBOARD:ShowScene("mailSend")
+    if IsInGamepadPreferredMode() or IsConsoleUI() then
+      if IsConsoleUI() then
+        EVENT_MANAGER:RegisterForEvent(to.."LDMMailboxOpen", EVENT_MAIL_OPEN_MAILBOX , function()
+          populateGamepadFields(decoratedRecipient, subject, body)
+        end )
+      else
+        populateGamepadFields(decoratedRecipient, subject, body)
+        MAIN_MENU_GAMEPAD:ShowScene("mailGamepad")
+        ZO_GamepadGenericHeader_SetActiveTabIndex(MAIN_MENU_GAMEPAD.header, 2)
+      end
+    populateGamepadFields(decoratedRecipient, subject, body)
+    else
+      mailSend.to:SetText(decoratedRecipient)
+      mailSend.subject:SetText(subject)
+      mailSend.body:SetText(body)
+      MAIN_MENU_KEYBOARD:ShowScene("mailSend")
+    end
   end
-
 end
