@@ -26,8 +26,12 @@ function LDM:ComposeMail(to, subject, body, sendNow)
 
   if sendNow then
     RequestOpenMailbox()
-    SendMail(decoratedRecipient, subject, body)
-    CloseMailbox()
+    zo_callLater(function()
+      SendMail(decoratedRecipient, subject, body)
+      zo_callLater(
+        CloseMailbox,
+      100)
+    end, 100)
   else
     if IsInGamepadPreferredMode() or IsConsoleUI() then
       if IsConsoleUI() then
