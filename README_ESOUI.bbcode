@@ -61,7 +61,9 @@ MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
 
 [size=+2]Sending[/size]
 
-To send mail using a template, you use the "ComposeMail" method, optionally overriding the original values with further variables:
+Pass the recipient, subject and body arguments to LibDynamicMail:ComposeMail to send.  There is a fourth parameter, sendNow, when when true will trigger an immediate send.
+
+Passing nil or false will populate the initial values in the Send Mail view without sending.
 
 [code]
 
@@ -184,7 +186,7 @@ local function myAddonCallback()
 
     -- add true as the last argument to RegisterInboxCallback to get this processing behavior
 
-    MyAddon.LDM:UnregisterInboxReadEvents("Process")
+    MyAddon.LDM:UnregisterInboxReadEvents(MyAddon.Name.."Process")
 
     end
 

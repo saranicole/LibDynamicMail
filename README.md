@@ -53,15 +53,23 @@ MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
 
 ### Sending
 
-To send mail using a template, you use the "PopulateCompose" method, optionally overriding the original values with further variables:
+Pass the recipient, subject and body arguments to LibDynamicMail:ComposeMail to send.  There is a fourth parameter, sendNow, when when true will trigger an immediate send.  
+
+Passing nil or false will populate the initial values in the Send Mail view without sending.
 
 ```
-local sendObject = {
-  recipient = "BFF",
-  subject = "How was your day",
-  body = "Hoping you are doing well"
-}
-MyAddon.LDM:PopulateCompose("MyAddonRequest", sendObject)
+
+local recipient = "BFF",
+
+local subject = "How was your day"
+
+local body = "Hoping you are doing well"
+
+
+-- Passing true to sendNow will trigger an immediate send.  Passing nil or false will populate the initial values in the Send Mail view.
+
+MyAddon.LDM:ComposeMail(recipient, subject, body, sendNow)
+
 ```
 
 If you are using LibTextFormat, the sendObject will be converted into a Scope for you within the library method.
@@ -72,12 +80,19 @@ You will need to let the user know that they have to navigate to the mail send v
 
 You can use a method like the following to do that:
 ```
+
 local function makeAnnouncement(text, sound)
+
   local params = CENTER_SCREEN_ANNOUNCE:CreateMessageParams(CSA_CATEGORY_LARGE_TEXT, sound)
+
 			params:SetCSAType(CENTER_SCREEN_ANNOUNCE_TYPE_POI_DISCOVERED)
+
 			params:SetText(text)
+
 			CENTER_SCREEN_ANNOUNCE:AddMessageWithParams(params)
+
 end
+
 ```
 
 ### Processing Received Mail
@@ -91,29 +106,27 @@ EVENT_MANAGER:RegisterForEvent(MyAddonName.."mailbox", EVENT_MAIL_OPEN_MAILBOX ,
 
 ```
 
-If you are processing all mail that matches the values in your template, you will need two events and two callback, one pair that processes the mail entries into a list of mail Ids, and one pair that performs a callback on matching Ids.
+If you are processing all mail that matches the search values, you will need two events and two callback, one pair that processes the mail entries into a list of mail Ids, and one pair that performs a callback on matching Ids.
 
-The first parameter to each of these functions is the name of a template registered with the RegisterTemplate function.  The template will provide the fields and values for matching mail messages.
-
-The second parameter is the callback namespace - it will be the key for registering/unregistering mail events for your code execution.
+The parameter is the callback namespace - it will be the key for registering/unregistering mail events for your code execution.
 
 ```
 
 local function myAddonCallback()
 
-  MyAddon.LDM:RegisterInboxEvents("Requested", "Scan")
-  MyAddon.LDM:RegisterInboxEvents("Requested", "Process")
+  MyAddon.LDM:RegisterInboxEvents(MyAddon.Name.."Scan")
+  MyAddon.LDM:RegisterInboxEvents(MyAddon.Name.."Process")
 
-  MyAddon.LDM:RegisterInboxCallback("Requested", "Scan", function(event, mailId)
+  MyAddon.LDM:RegisterInboxCallback(MyAddon.Name.."Scan", function(event, mailId)
 
-    MyAddon.LDM.mailIds = self.mailInstance:FetchMailIdsForTemplateSubject("Requested")
+    MyAddon.LDM.mailIds = self.mailInstance:FetchMailIdsForSubject("mysearchvalue")
 
   -- note that since we did not pass true at the end, no need to unregister the mail read event
 
   end)
 
 
-  MyAddon.LDM:RegisterInboxCallback("Requested", "Process", function(event, mailId)
+  MyAddon.LDM:RegisterInboxCallback(MyAddon.Name.."Process", function(event, mailId)
 
       local function isValueInTable(table, element)
 
@@ -165,7 +178,7 @@ local function myAddonCallback()
 
     -- add true as the last argument to RegisterInboxCallback to get this processing behavior
 
-    MyAddon.LDM:UnregisterInboxReadEvents("Process")
+    MyAddon.LDM:UnregisterInboxReadEvents(MyAddon.Name.."Process")
 
     end
 
@@ -181,14 +194,13 @@ end
 ```
 
 
-
 What these function calls do:
 
 RegisterInboxEvents - registers the EVENT_MAIL_READABLE based on the template name (note that this should happen before the callbacks are registered since they are dynamic)
 
 RegisterInboxCallback - registers the callback to happen on a readable mail being available
 
-FetchMailIdsForTemplateSubject - returns the mail ids of the received mail for any incoming mail with the subject that matches your "Requested" template subject
+FetchMailIdsForSubject - returns the mail ids of the received mail for any incoming mail with the subject that matches your search value
 
 RetrieveMailData - takes a mail Id and retrieves all of the mail data except for the mail body (the text of the message)
 

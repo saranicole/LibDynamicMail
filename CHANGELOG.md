@@ -1,3 +1,7 @@
+## 2025.02.08
+- Removed templating complexity
+- Added support for immediate mail sending
+
 ## 2025.02.07
 - Added support for processing multiple mail entries matching a pattern
 - Added support for delaying read mail event unregister
