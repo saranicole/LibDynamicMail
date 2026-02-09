@@ -17,39 +17,6 @@ Works with all platforms - leverages Event manager on console to populate send f
 
 ## Basic Usage
 
-### Setup
-
-The first thing LibDynamicMail requires you to do is to initialize it with a saved variables "namespace" so that it can save filters and similar objects specific to your addon.
-
-First declare your saved vars
-```
-MyAddon.savedVars = ZO_SavedVars:NewAccountWide("MyAddon_Vars", 1, nil, {
-libNamespace = {
-  LDM = {}
-}})
-
-```
-
-Then initialize LibDynamicMail with the object.
-```
-MyAddon.LDM = MyAddon.LDM or LibDynamicMail:New(MyAddon.savedVars.libNamespace.LDM)
-```
-
-### Templates
-
-Templates are named objects that have the needed fields for sending or parsing mail.  You will need to create a template before you can generate a send request or match on a received mail item.
-
-```
-local myrecipient = "BestFriend"
-local mysubject = "Request to chat"
-local mybody = "Chat sometime"
-
-MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
-    recipient = myrecipient,
-    subject   = mysubject,
-    body      = mybody
-  })
-```
 
 ### Sending
 
@@ -72,28 +39,6 @@ MyAddon.LDM:ComposeMail(recipient, subject, body, sendNow)
 
 ```
 
-If you are using LibTextFormat, the sendObject will be converted into a Scope for you within the library method.
-
-[color=red]Note that on console PopulateCompose will not open the send mail view.[/color]
-
-You will need to let the user know that they have to navigate to the mail send view themselves in order to see the filled values.
-
-You can use a method like the following to do that:
-```
-
-local function makeAnnouncement(text, sound)
-
-  local params = CENTER_SCREEN_ANNOUNCE:CreateMessageParams(CSA_CATEGORY_LARGE_TEXT, sound)
-
-			params:SetCSAType(CENTER_SCREEN_ANNOUNCE_TYPE_POI_DISCOVERED)
-
-			params:SetText(text)
-
-			CENTER_SCREEN_ANNOUNCE:AddMessageWithParams(params)
-
-end
-
-```
 
 ### Processing Received Mail
 
