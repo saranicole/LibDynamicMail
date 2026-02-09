@@ -1,63 +1,17 @@
 [size=+3]LibDynamicMail[/size]
 
-[size=+2]Library for Elder Scrolls Online Addons - Dynamic mail templates[/size]
+[size=+2]Library for Elder Scrolls Online Addons - Mail utility functions[/size]
 
 [size=+2]Reason for being[/size]
 
-Allows addons to generate preset mail templates and trigger email processing events.  Pairs with LibTextFormat to create dynamic mail.
+Easily send and process mail messages.
 
 [size=+2]Platform Support[/size]
 
-Works with all platforms - leverages Event manager on console to populate send fields since directly opening the mail view is prohibited.
+Works with all platforms
 
 [size=+3]Basic Usage[/size]
 
-[size=+2]Setup[/size]
-
-The first thing LibDynamicMail requires you to do is to initialize it with a saved variables "namespace" so that it can save filters and similar objects specific to your addon.
-
-First declare your saved vars
-[code]
-
-MyAddon.savedVars = ZO_SavedVars:NewAccountWide("MyAddon_Vars", 1, GetWorldName(), {
-
-libNamespace = {
-
-  LDM = {}
-
-}})
-
-[/code]
-
-Then initialize LibDynamicMail with the object.
-[code]
-MyAddon.LDM = MyAddon.LDM or LibDynamicMail:New(MyAddon.savedVars.libNamespace.LDM)
-[/code]
-
-[size=+2]Templates[/size]
-
-Templates are named objects that have the needed fields for sending or parsing mail.  You will need to create a template before you can generate a send request or match on a received mail item.
-
-[code]
-
-local myrecipient = "BestFriend"
-
-local mysubject = "Request to chat"
-
-local mybody = "Chat sometime"
-
-
-MyAddon.LDM:RegisterTemplate("MyAddonRequest", {
-
-    recipient = myrecipient,
-
-    subject   = mysubject,
-
-    body      = mybody
-
-  })
-
-[/code]
 
 [size=+2]Sending[/size]
 
@@ -80,28 +34,6 @@ MyAddon.LDM:ComposeMail(recipient, subject, body, sendNow)
 
 [/code]
 
-If you are using LibTextFormat, the sendObject will be converted into a Scope for you within the library method.
-
-[color=red]Note that on console PopulateCompose will not open the send mail view.[/color]
-
-You will need to let the user know that they have to navigate to the mail send view themselves in order to see the filled values.
-
-You can use a method like the following to do that:
-[code]
-
-local function makeAnnouncement(text, sound)
-
-  local params = CENTER_SCREEN_ANNOUNCE:CreateMessageParams(CSA_CATEGORY_LARGE_TEXT, sound)
-
-			params:SetCSAType(CENTER_SCREEN_ANNOUNCE_TYPE_POI_DISCOVERED)
-
-			params:SetText(text)
-
-			CENTER_SCREEN_ANNOUNCE:AddMessageWithParams(params)
-
-end
-
-[/code]
 
 [size=+2]Processing Received Mail[/size]
 
