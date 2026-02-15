@@ -1,3 +1,6 @@
+## 2025.02.14
+- Use ReadMail and fix PC inbox
+
 ## 2025.02.08
 - Removed templating complexity
 - Added support for immediate mail sending
