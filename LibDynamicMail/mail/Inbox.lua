@@ -47,12 +47,13 @@ function LDM:SafeDeleteMail(mailId, forceBool)
 end
 
 function LDM:RetrieveActiveMailBody()
+  local mailId
   if IsConsoleUI() or IsInGamepadPreferredMode() then
-    local control = MailInbox.control:GetNamedChild("Inbox"):GetNamedChild("RightPane"):GetNamedChild("Container"):GetNamedChild("Inbox")
-   return ZO_MailView_GetBody_Gamepad(control)
+    mailId = MailInbox:GetActiveMailId()
   else
-    return MailInbox.body:GetText()
+    mailId = MailInbox:GetOpenMailId()
   end
+  return ReadMail(mailId)
 end
 
 function LDM:RetrieveMailData(mailId)
