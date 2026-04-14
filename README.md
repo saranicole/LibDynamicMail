@@ -17,6 +17,12 @@ Works with all platforms - leverages Event manager on console to populate send f
 
 ## Basic Usage
 
+### Initialization
+
+```
+MyAddon.LDM = LibDynamicMail
+```
+
 
 ### Sending
 
