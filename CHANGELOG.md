@@ -1,3 +1,6 @@
+## 2025.04.13
+- Update for u50
+
 ## 2025.02.14
 - Use ReadMail and fix PC inbox
 
