@@ -1,7 +1,7 @@
 ## Title: LibDynamicMail
 ## Author: Saranicole1980
 ## Version: ${ADDON_VERSION}
-## APIVersion: 101049 101050
+## APIVersion: 101050 101051
 ## AddOnVersion: ${ADDON_FORMATTED_VERSION}
 ## Description: Dynamic mail templates
 ## IsLibrary: true
